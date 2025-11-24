@@ -4,23 +4,27 @@ export default class Game {
     this.maxWrong = 6;
     this.wrong = 0;
     this.guessed = [];
+    this.history = [];
   }
 
   guess(letter) {
     letter = letter.toLowerCase();
 
+    let result;
     if (this.guessed.includes(letter)) {
-      return 'repeat';
-    }
-
-    this.guessed.push(letter);
-
-    if (this.word.includes(letter)) {
-      return 'ok';
+      result = 'repeat';
     } else {
-      this.wrong++;
-      return 'miss';
+      this.guessed.push(letter);
+      if (this.word.includes(letter)) {
+        result = 'ok';
+      } else {
+        this.wrong++;
+        result = 'miss';
+      }
     }
+
+    this.history.push({ letter, result });
+    return result;
   }
 
   getMaskedWord() {
@@ -43,5 +47,9 @@ export default class Game {
 
   getWord() {
     return this.word;
+  }
+
+  getHistory() {
+    return this.history;
   }
 }
