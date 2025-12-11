@@ -134,7 +134,7 @@ renderInfo() {
       <h2>Saved Games</h2>
       <table>
         <thead>
-          <tr><th>ID</th><th>Player</th><th>Word</th><th>Won</th><th>Replay</th></tr>
+          <tr><th>ID</th><th>Player</th><th>Word</th><th>Replay</th></tr>
         </thead>
         <tbody>
     `;
@@ -143,36 +143,34 @@ renderInfo() {
         <td>${g.id}</td>
         <td>${g.player}</td>
         <td>${g.word}</td>
-        <td>${g.won}</td>
-        <td><button class="menu-btn" data-id="${g.id}">Replay</button></td>
+        <td><button class="menu-btn" data-game='${JSON.stringify(g)}'>Replay</button></td>
       </tr>`;
     });
     html += '</tbody></table>';
     this.renderFull(html);
 
-    this.fullArea.querySelectorAll('button[data-id]').forEach(btn => {
-      btn.onclick = () => onReplayClick(btn.dataset.id);
+    this.fullArea.querySelectorAll('button[data-game]').forEach(btn => {
+      btn.onclick = () => onReplayClick(btn.dataset.game);
     });
   }
 
-  renderReplay(gameData, onBack) {
+  renderReplay(gameData, info, onBack) {
   let html = `
-    <h2>Replay Game #${gameData.id}</h2>
+    <h2>Replay Game #${info.id}</h2>
     <table>
       <thead>
-        <tr><th>Player</th><th>Word</th><th>Won</th></tr>
+        <tr><th>Player</th><th>Word</th></tr>
       </thead>
       <tbody>
         <tr>
-          <td>${gameData.player}</td>
-          <td>${gameData.word}</td>
-          <td>${gameData.won}</td>
+          <td>${info.player}</td>
+          <td>${info.word}</td>
         </tr>
       </tbody>
     </table>
   `;
 
-  if(gameData.history && gameData.history.length){
+  if(gameData.length){
     html += `
       <h3>History of guesses</h3>
       <table class="guess-history"> 
@@ -181,7 +179,7 @@ renderInfo() {
         </thead>
         <tbody>
     `;
-    gameData.history.forEach(h => {
+    gameData.forEach(h => {
       let color = h.result === 'ok' ? 'green' : (h.result === 'miss' ? 'red' : 'orange');
       html += `<tr>
         <td>${h.letter}</td>

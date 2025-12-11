@@ -1,10 +1,11 @@
 import Game from './Game.js';
 import View from './View.js';
-import { saveGame, getAllGames, getGameById } from './db.js';
+import { createGame, addStep, getAllGames, getGameById } from './db.js';
 
 const playerInput = document.getElementById("player-name");
 
 let game;
+let currentGameId = null;
 const view = new View(handleGuess, startGame, () => {
   view.fullArea.style.display = 'none';
   view.showGamePanels();
@@ -20,6 +21,8 @@ async function startGame() {
   const words = ['planet', 'silver', 'castle', 'garden', 'bridge', 'school'];
   const randomWord = words[Math.floor(Math.random() * words.length)];
   game = new Game(randomWord);
+  currentGameId = null;
+
   view.fullArea.style.display = 'none';
   view.showGamePanels();
   view.renderLetters(handleGuess);
@@ -33,25 +36,35 @@ async function handleGuess(letter, btn) {
   view.disableLetter(btn);
   view.renderWord(game.getMaskedWord());
   view.renderHangman(game.getWrongCount());
+
   if (result === 'ok') view.showMessage(`Good job! '${letter}' is in the word.`);
   if (result === 'miss') view.showMessage(`Sorry, '${letter}' is not in the word.`);
   if (result === 'repeat') view.showMessage(`You already tried '${letter}'.`);
 
+  const player = playerInput.value.trim() || "Anonymous";
+
+  if (!currentGameId) {
+    const gameData = {
+      player,
+      word: game.getWord(),
+      won: game.isWon(),
+      wrong: game.getWrongCount(),
+      history: game.getHistory()
+    };
+    const res = await createGame(gameData);
+    currentGameId = res.id;
+  } else {
+    const lastStep = game.getHistory().slice(-1)[0];
+    await addStep(currentGameId, lastStep);
+  }
+
   if (game.isWon() || game.isLost()) {
     if (game.isWon()) {
-    view.showMessage(`🎉 You guessed it! The word was '${game.getWord()}'`);
+      view.showMessage(`🎉 You guessed it! The word was '${game.getWord()}'`);
     } else if (game.isLost()) {
       view.showMessage(`💀 You lost! The word was '${game.getWord()}'`);
     }
     view.disableAllLetters();
-    const player = playerInput.value.trim() || "Anonymous";
-    await saveGame({
-      word: game.getWord(),
-      won: game.isWon(),
-      wrong: game.getWrongCount(),
-      player,
-      history: game.getHistory()
-    });
   }
 }
 
@@ -60,13 +73,14 @@ async function renderSavedGames() {
   view.renderSavedGames(games, renderReplay);
 }
 
-async function renderReplay(id) {
-  const g = await getGameById(id);
+async function renderReplay(data) {
+  const info = JSON.parse(data);
+  const g = await getGameById(info.id);
   if (!g) {
     alert("Game not found");
     return;
   }
-  view.renderReplay(g, renderSavedGames);
+  view.renderReplay(g, info, renderSavedGames);
 }
 
 startGame();
